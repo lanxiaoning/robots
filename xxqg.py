@@ -9,7 +9,9 @@ __author__ = 'lanxiaoning'
 
 HOME_PAGE = 'https://www.xuexi.cn/'
 
-VIDEO_LINK = 'https://www.xuexi.cn/a191dbc3067d516c3e2e17e2e08953d6/b87d700beee2c44826a9202c75d18c85.html?pageNumber=39'
+#VIDEO_LINK = 'https://www.xuexi.cn/a191dbc3067d516c3e2e17e2e08953d6/b87d700beee2c44826a9202c75d18c85.html?pageNumber=39'
+
+VIDEO_LINK = 'https://www.xuexi.cn/a191dbc3067d516c3e2e17e2e08953d6/b87d700beee2c44826a9202c75d18c85.html'
 
 LONG_VIDEO_LINK = 'https://www.xuexi.cn/f65dae4a57fe21fcc36f3506d660891c/b2e5aa79be613aed1f01d261c4a2ae17.html'
 
@@ -146,10 +148,44 @@ def watch_videos():
 
     print("播放视频完毕\n")
 
+
+def watch_videos2():
+    print('开始观看视频')
+    browser.get(VIDEO_LINK)
+    time.sleep(1)
+    p_window = browser.current_window_handle
+    title_path='//*[@id="root"]/div/div/section/div/div/div/div/div/section/div/div/div/div/div/section/div/div/div/div/div/section/div/div/div/div/div[3]/section/div/div/div/div/div/div/section/div[3]/section/div/div/div[1]/div[rownum]/div[colnum]/div/div/div[1]/span'
+    for i in range(1,5):
+        ##每行两条视频标题
+        for j in range(1,3):
+            titletmp = title_path.replace('rownum', str(i))
+            title = titletmp.replace('colnum', str(j))
+            autoclick(title, 0)
+            windows = browser.window_handles
+            browser.switch_to.window(windows[-1])
+
+            browser.execute_script("var q=document.documentElement.scrollTop=" + str(SCROLLS))
+
+            ##有时候视频控件加载出来，但视频内容未加载，统计到class=duration的为00:00，所以还是要等待3秒
+            time.sleep(3)
+
+            # 点击播放....已改为自动播放
+            #browser.find_element_by_xpath("//div[@class='outter']").click()
+
+            # 获取视频时长
+            #video_duration_str = browser.find_element_by_class_name('duration').get_attribute('innerText')
+            video_duration_str=autotextbyclass('duration',0)
+            print('duration:'+video_duration_str)
+            video_duration = int(video_duration_str.split(':')[0]) * 60 + int(video_duration_str.split(':')[1])
+            print('视频时长:'+str(video_duration)+'秒,等待'+str(video_duration)+'秒')
+            time.sleep(video_duration)
+            browser.close()
+            browser.switch_to.window(p_window)
+
 def read_articles():
     print('开始阅读文章')
     browser.get(ARTICLES_LINK)
-    time.sleep(5)
+    time.sleep(1)
     p_window=browser.current_window_handle
     title_path='//*[@id="root"]/div/div/section/div/div/div/div/div/section/div/div/div/div[1]/div/section/div/div/div/div/div/section/div/div/div/div/div[3]/section/div/div/div/div/div/section/div/div/div[1]/div/div[num]/div/div/div[1]/span'
     for i in range(1,7):
@@ -192,6 +228,18 @@ def autoclick(xpath,alreadytrycount):
             print('经多次尝试，无法打定位元素'+xpath)
             sys.exit(-1)
 
+def autotextbyclass(classname,alreadytrycount):
+    try:
+        textstr = browser.find_element_by_class_name(classname).get_attribute('innerText')
+        return textstr
+    except:
+        if(alreadytrycount<MAX_TRY):
+            time.sleep(1)
+            alreadytrycount=alreadytrycount+1
+            autotextbyclass(classname, alreadytrycount)
+        else:
+            print('经多次尝试，无法打定位元素'+classname)
+            sys.exit(-1)
 
 def get_scores():
 
@@ -236,7 +284,7 @@ if __name__ == '__main__':
     read_articles()
 
     # 观看视频
-    watch_videos()
+    watch_videos2()
 
     # 获得今日积分
     get_scores()
