@@ -3,6 +3,7 @@
 from selenium import webdriver
 import sys
 import time
+import datetime
 
 __author__ = 'lanxiaoning'
 
@@ -27,11 +28,15 @@ ARTICLES_LINK = 'https://www.xuexi.cn/d05cad69216e688d304bb91ef3aac4c6/9a3668c13
 
 MY_STUDY='https://pc.xuexi.cn/points/my-study.html'
 
+##滚动900单位
 SCROLLS=900
-
+##有效阅读时间为2分钟
+ARTICAL_READ_TIME=120
+##有效视频观看3分钟
+VIDEO_WATCH_TIME=180
 MAX_TRY=7
 
-driver='C:\\Users\\Administrator\\AppData\\Local\\Google\\Chrome\\Application\\chromedriver.exe'
+driver='Application\\chromedriver.exe'
 
 options = webdriver.ChromeOptions()
 
@@ -41,115 +46,18 @@ options.add_experimental_option('excludeSwitches', ['enable-automation'])
 browser = webdriver.Chrome(executable_path=driver,options=options)
 
 
-def login_simulation():
-
-    """模拟登录"""
-
-    # 方式一：使用cookies方式
-
-    # 先自己登录，然后复制token值覆盖
-
-    # cookies = {'name': 'token', 'value': ''}
-
-    # browser.add_cookie(cookies)
-
-
-
-    # 方式二：自己扫码登录
-
+def login():
     browser.get(LOGIN_LINK)
-
     browser.maximize_window()
-
     browser.execute_script("var q=document.documentElement.scrollTop="+str(SCROLLS))
-
-    #time.sleep(10)
-
-    waitlogin(True)
-
-    browser.get(HOME_PAGE)
-
-    print("模拟登录完毕\n")
+    print('请使用手机强国学习APP扫描登陆')
+    ##登陆后会跳转到一个URL可以用来判断是否完成登陆
+    while (browser.current_url != MY_STUDY):
+        time.sleep(1)
+    print('用户已登陆')
 
 
 def watch_videos():
-
-    """观看视频"""
-
-    browser.get(VIDEO_LINK)
-
-    videos = browser.find_elements_by_xpath("//div[@id='Ck3ln2wlyg3k00']")
-
-    spend_time = 0
-
-
-
-    for i, video in enumerate(videos):
-
-        if i > 6:
-
-            break
-
-        video.click()
-
-        all_handles = browser.window_handles
-
-        browser.switch_to_window(all_handles[-1])
-
-        browser.get(browser.current_url)
-
-
-
-        # 点击播放
-
-        browser.find_element_by_xpath("//div[@class='outter']").click()
-
-        # 获取视频时长
-
-        video_duration_str = browser.find_element_by_xpath("//span[@class='duration']").get_attribute('innerText')
-
-        video_duration = int(video_duration_str.split(':')[0]) * 60 + int(video_duration_str.split(':')[1])
-
-        # 保持学习，直到视频结束
-
-        time.sleep(video_duration + 3)
-
-        spend_time += video_duration + 3
-
-        browser.close()
-
-        browser.switch_to_window(all_handles[0])
-
-
-
-    # if spend_time < 3010:
-
-    # browser.get(LONG_VIDEO_LINK)
-
-    # browser.execute_script("var q=document.documentElement.scrollTop=850")
-
-    # try:
-
-    # browser.find_element_by_xpath("//div[@class='outter']").click()
-
-    # except:
-
-    # pass
-
-    #
-
-    # # 观看剩下的时间
-
-    # time.sleep(3010 - spend_time)
-
-    browser.get(TEST_VIDEO_LINK)
-
-    time.sleep(3010 - spend_time)
-
-    print("播放视频完毕\n")
-
-
-def watch_videos2():
     print('开始观看视频')
     browser.get(VIDEO_LINK)
     time.sleep(1)
@@ -164,7 +72,7 @@ def watch_videos2():
             windows = browser.window_handles
             browser.switch_to.window(windows[-1])
 
-            browser.execute_script("var q=document.documentElement.scrollTop=" + str(SCROLLS))
+            browser.execute_script("var q=document.documentElement.scrollTop=" + str(SCROLLS/2))
 
             ##有时候视频控件加载出来，但视频内容未加载，统计到class=duration的为00:00，所以还是要等待3秒
             time.sleep(3)
@@ -175,10 +83,16 @@ def watch_videos2():
             # 获取视频时长
             #video_duration_str = browser.find_element_by_class_name('duration').get_attribute('innerText')
             video_duration_str=autotextbyclass('duration',0)
-            print('duration:'+video_duration_str)
+            ##print('duration:'+video_duration_str)
             video_duration = int(video_duration_str.split(':')[0]) * 60 + int(video_duration_str.split(':')[1])
             print('视频时长:'+str(video_duration)+'秒,等待'+str(video_duration)+'秒')
             time.sleep(video_duration)
+
+            ##如果视频时长过短，无法获取视听时长积分，则补回这个时间差
+            if(video_duration<VIDEO_WATCH_TIME):
+                print('视频时长不足，额外等待' + str(VIDEO_WATCH_TIME-video_duration) + '秒')
+                time.sleep(VIDEO_WATCH_TIME-video_duration)
+
             browser.close()
             browser.switch_to.window(p_window)
 
@@ -193,21 +107,27 @@ def read_articles():
         autoclick(title, 0)
         windows = browser.window_handles
         browser.switch_to.window(windows[-1])
-        for i in range(0, 2000, 100):
 
-            js_code = "var q=document.documentElement.scrollTop=" + str(i)
-
+        starttime=datetime.datetime.now()
+        ##滚动条往下滚60秒
+        for i in range(0, 60, 1):
+            js_code = "var q=document.documentElement.scrollTop=" + str(i*40)
             browser.execute_script(js_code)
-
             time.sleep(1)
 
-        for i in range(2000, 0, -100):
-
-            js_code = "var q=document.documentElement.scrollTop=" + str(i)
-
+        ##滚动条再往上滚
+        for i in range(60, 0, -1):
+            js_code = "var q=document.documentElement.scrollTop=" + str(i*40)
             browser.execute_script(js_code)
-
             time.sleep(1)
+
+        endtime = datetime.datetime.now()
+
+        ##检查阅读时长，如果时长不足2分钟，则无法获取文章学习时长积分，需要补回时间差
+        readtime=(endtime-starttime).seconds
+        if(readtime<ARTICAL_READ_TIME):
+            print('阅读时长不足，额外等待'+str(ARTICAL_READ_TIME-readtime)+'秒')
+            time.sleep(ARTICAL_READ_TIME-readtime)
 
         browser.close()
         browser.switch_to.window(p_window)
@@ -262,29 +182,16 @@ def get_scores():
     print("获取积分完毕，即将退出\n")
 
 
-def waitlogin(printflag):
-
-    printflag=True
-    ##登陆后会跳转到一个URL可以用来判断是否完成登陆
-    while(browser.current_url!=MY_STUDY):
-        if(printflag):
-            print('请使用手机强国学习APP扫描登陆')
-            printflag=False
-        time.sleep(1)
-    print('用户已登陆')
-
-
-
 if __name__ == '__main__':
 
     # 模拟登录
-    login_simulation()
+    login()
 
     # 阅读文章
     read_articles()
 
     # 观看视频
-    watch_videos2()
+    watch_videos()
 
     # 获得今日积分
     get_scores()
