@@ -10,7 +10,6 @@ import random
 
 __author__ = 'lanxiaoning'
 
-
 HOME_PAGE = 'https://www.xuexi.cn/'
 
 #VIDEO_LINK = 'https://www.xuexi.cn/a191dbc3067d516c3e2e17e2e08953d6/b87d700beee2c44826a9202c75d18c85.html?pageNumber=39'
