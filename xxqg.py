@@ -6,6 +6,7 @@ import time
 import datetime
 import pickle
 import os
+import random
 
 __author__ = 'lanxiaoning'
 
@@ -37,6 +38,8 @@ ARTICAL_READ_TIME=120
 ##有效视频观看3分钟
 VIDEO_WATCH_TIME=180
 MAX_TRY=7
+##随机概率，如果(0,RAND_PER)之间的随机数是0，则执行doRandom()快速的阅读和关闭，不赚积分
+RAND_PER=6
 
 driver='Application\\chromedriver.exe'
 
@@ -74,6 +77,10 @@ def watch_videos():
             windows = browser.window_handles
             browser.switch_to.window(windows[-1])
 
+            if (random.randint(0, RAND_PER) == 0):
+                doRandom(browser, p_window)
+                continue
+
             browser.execute_script("var q=document.documentElement.scrollTop=" + str(SCROLLS/2))
 
             ##有时候视频控件加载出来，但视频内容未加载，统计到class=duration的为00:00，所以还是要等待3秒
@@ -93,7 +100,14 @@ def watch_videos():
             ##如果视频时长过短，无法获取视听时长积分，则补回这个时间差
             if(video_duration<VIDEO_WATCH_TIME):
                 print('视频时长不足，额外等待' + str(VIDEO_WATCH_TIME-video_duration) + '秒')
-                time.sleep(VIDEO_WATCH_TIME-video_duration)
+                waittime=VIDEO_WATCH_TIME-video_duration
+                ##增加随机等待的时间
+                randwaittime = random.randint(0, 5)
+                waittime=waittime+randwaittime
+                for i in range(0,waittime):
+                    js_code = "var q=document.documentElement.scrollTop=" + str(i * 100)
+                    browser.execute_script(js_code)
+                    time.sleep(1)
 
             browser.close()
             browser.switch_to.window(p_window)
@@ -109,6 +123,10 @@ def read_articles():
         autoclick(title, 0)
         windows = browser.window_handles
         browser.switch_to.window(windows[-1])
+
+        if(random.randint(0,RAND_PER)==0):
+            doRandom(browser,p_window)
+            continue
 
         starttime=datetime.datetime.now()
         ##滚动条往下滚60秒
@@ -130,6 +148,13 @@ def read_articles():
         if(readtime<ARTICAL_READ_TIME):
             print('阅读时长不足，额外等待'+str(ARTICAL_READ_TIME-readtime)+'秒')
             time.sleep(ARTICAL_READ_TIME-readtime)
+
+        ##随机事件，随机等待一定时间，在这段时间内自动滚动
+        randwaittime=random.randint(0,5)
+        for i in range(0,i):
+            js_code = "var q=document.documentElement.scrollTop=" + str(i * 100)
+            browser.execute_script(js_code)
+            time.sleep(1)
 
         browser.close()
         browser.switch_to.window(p_window)
@@ -207,6 +232,20 @@ def read_cookie():
                 #print("未修改：",item)
                 browser.add_cookie(item)
 
+##增加随机事件，使用一定的概率来打开页面后不做过多停留，快速关闭页面，增加拟人程度
+def doRandom(b,p_w):
+    print('进入随机操作模式')
+    begintime = datetime.datetime.now()
+    playtime=random.randint(1,5)
+    for i in range(0, playtime):
+        js_code = "var q=document.documentElement.scrollTop=" + str(i * 100)
+        b.execute_script(js_code)
+        time.sleep(1)
+    b.close()
+    b.switch_to.window(p_w)
+    endtime = datetime.datetime.now()
+    spenttime=(endtime-begintime).seconds
+    print('退出随机操作模式，一共耗时'+str(spenttime)+'秒')
 
 if __name__ == '__main__':
 
@@ -214,6 +253,7 @@ if __name__ == '__main__':
         print("cookie存在！")
         ##把COOKIE加载进浏览器之前，一定要先打开页面，否则会报invalid cookie domain
         browser.get(HOME_PAGE)
+        browser.maximize_window()
         # 读cookie
         read_cookie()
         print("读完cookie，进入主体部份--阅读文章和观看视频")
