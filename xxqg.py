@@ -4,6 +4,8 @@ from selenium import webdriver
 import sys
 import time
 import datetime
+import pickle
+import os
 
 __author__ = 'lanxiaoning'
 
@@ -181,11 +183,45 @@ def get_scores():
 
     print("获取积分完毕，即将退出\n")
 
+def save_cookie():
+    cookies=browser.get_cookies()
+    print("开始保存cookie! ",cookies)
+    pkCookies=pickle.dumps(cookies)
+    with open('xuexi.cookie','wb+') as f:
+        f.write(pkCookies)
+        print("cookie已保存！")
+
+def read_cookie():
+    with open('xuexi.cookie','rb') as f:
+        pkCookies=pickle.load(f)
+        print("开始读取cookie! ")
+        for item in pkCookies:
+            #print('cookie item: '+str(item))
+            if ('expiry' in item) and (item['expiry'] != (int(item['expiry']))):
+                #print("修改前：", item)
+                # 学习强国返回的expiry有小数，去掉
+                item['expiry'] = int(item['expiry'])
+                #print("修改后：", item)
+                browser.add_cookie(item)
+            else:
+                #print("未修改：",item)
+                browser.add_cookie(item)
+
 
 if __name__ == '__main__':
 
-    # 模拟登录
-    login()
+    if (os.path.exists('xuexi.cookie')):
+        print("cookie存在！")
+        ##把COOKIE加载进浏览器之前，一定要先打开页面，否则会报invalid cookie domain
+        browser.get(HOME_PAGE)
+        # 读cookie
+        read_cookie()
+        print("读完cookie，进入主体部份--阅读文章和观看视频")
+    else:
+        print("cookie不存在，进入登录页面！")
+        # 模拟登录
+        login()
+        save_cookie()
 
     # 阅读文章
     read_articles()
@@ -195,5 +231,8 @@ if __name__ == '__main__':
 
     # 获得今日积分
     get_scores()
+
+    # 更新cookie
+    save_cookie()
 
     browser.quit()
