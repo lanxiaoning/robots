@@ -10,6 +10,7 @@ import random
 
 __author__ = 'lanxiaoning'
 
+
 HOME_PAGE = 'https://www.xuexi.cn/'
 
 #VIDEO_LINK = 'https://www.xuexi.cn/a191dbc3067d516c3e2e17e2e08953d6/b87d700beee2c44826a9202c75d18c85.html?pageNumber=39'
@@ -39,6 +40,8 @@ VIDEO_WATCH_TIME=180
 MAX_TRY=7
 ##随机概率，如果(0,RAND_PER)之间的随机数是0，则执行doRandom()快速的阅读和关闭，不赚积分
 RAND_PER=6
+##cookie内容保存文件定义
+COOKIE_FILE='xuexi.cookie'
 
 driver='Application\\chromedriver.exe'
 
@@ -103,8 +106,8 @@ def watch_videos():
                 ##增加随机等待的时间
                 randwaittime = random.randint(0, 5)
                 waittime=waittime+randwaittime
-                for i in range(0,waittime):
-                    js_code = "var q=document.documentElement.scrollTop=" + str(i * 100)
+                for k in range(0,waittime):
+                    js_code = "var q=document.documentElement.scrollTop=" + str(k * 100)
                     browser.execute_script(js_code)
                     time.sleep(1)
 
@@ -129,14 +132,14 @@ def read_articles():
 
         starttime=datetime.datetime.now()
         ##滚动条往下滚60秒
-        for i in range(0, 60, 1):
-            js_code = "var q=document.documentElement.scrollTop=" + str(i*40)
+        for j in range(0, 60, 1):
+            js_code = "var q=document.documentElement.scrollTop=" + str(j*40)
             browser.execute_script(js_code)
             time.sleep(1)
 
         ##滚动条再往上滚
-        for i in range(60, 0, -1):
-            js_code = "var q=document.documentElement.scrollTop=" + str(i*40)
+        for k in range(60, 0, -1):
+            js_code = "var q=document.documentElement.scrollTop=" + str(k*40)
             browser.execute_script(js_code)
             time.sleep(1)
 
@@ -150,8 +153,8 @@ def read_articles():
 
         ##随机事件，随机等待一定时间，在这段时间内自动滚动
         randwaittime=random.randint(0,5)
-        for i in range(0,i):
-            js_code = "var q=document.documentElement.scrollTop=" + str(i * 100)
+        for m in range(0,randwaittime):
+            js_code = "var q=document.documentElement.scrollTop=" + str(m * 100)
             browser.execute_script(js_code)
             time.sleep(1)
 
@@ -211,12 +214,12 @@ def save_cookie():
     cookies=browser.get_cookies()
     print("开始保存cookie! ",cookies)
     pkCookies=pickle.dumps(cookies)
-    with open('xuexi.cookie','wb+') as f:
+    with open(COOKIE_FILE,'wb+') as f:
         f.write(pkCookies)
         print("cookie已保存！")
 
 def read_cookie():
-    with open('xuexi.cookie','rb') as f:
+    with open(COOKIE_FILE,'rb') as f:
         pkCookies=pickle.load(f)
         print("开始读取cookie! ")
         for item in pkCookies:
@@ -248,14 +251,26 @@ def doRandom(b,p_w):
 
 if __name__ == '__main__':
 
-    if (os.path.exists('xuexi.cookie')):
+    if (os.path.exists(COOKIE_FILE)):
         print("cookie存在！")
         ##把COOKIE加载进浏览器之前，一定要先打开页面，否则会报invalid cookie domain
         browser.get(HOME_PAGE)
         browser.maximize_window()
         # 读cookie
         read_cookie()
-        print("读完cookie，进入主体部份--阅读文章和观看视频")
+        print("读完cookie，检测是否已有登陆信息!")
+        try:
+            browser.get(SCORES_LINK)
+            time.sleep(3)
+            ##检查一下我的积分页面有没有退出按钮
+            element=browser.find_element_by_xpath('//*[@id="Ca6ke9htmh6800"]')
+        except:
+            print('cookie可能已过期，需重新用手机APP扫描登陆')
+            #删除cookie文件
+            os.remove(COOKIE_FILE)
+            # 模拟登录
+            login()
+            save_cookie()
     else:
         print("cookie不存在，进入登录页面！")
         # 模拟登录
