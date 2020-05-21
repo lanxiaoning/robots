@@ -30,7 +30,9 @@ SCORES_LINK = 'https://pc.xuexi.cn/points/my-points.html'
 
 LOGIN_LINK = 'https://pc.xuexi.cn/points/login.html'
 
-ARTICLES_LINK = 'https://www.xuexi.cn/d05cad69216e688d304bb91ef3aac4c6/9a3668c13f6e303932b5e0e100fc248b.html'
+##头条新闻更新频率低，使用重要新闻代替
+##ARTICLES_LINK = 'https://www.xuexi.cn/d05cad69216e688d304bb91ef3aac4c6/9a3668c13f6e303932b5e0e100fc248b.html'
+ARTICLES_LINK = 'https://www.xuexi.cn/98d5ae483720f701144e4dabf99a4a34/5957f69bffab66811b99940516ec8784.html'
 
 MY_STUDY='https://pc.xuexi.cn/points/my-study.html'
 
